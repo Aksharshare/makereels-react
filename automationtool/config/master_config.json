@@ -1,0 +1,26 @@
+{
+  "input_folder": "C:\\\\Users\\\\sendt\\\\Downloads\\\\makereels\\\\automationtool\\\\input",
+  "output_folder": "C:\\\\Users\\\\sendt\\\\Downloads\\\\makereels\\\\automationtool\\\\output",
+  "pipeline_steps": {
+    "add_subtitles": true,
+    "trim_silence": true,
+    "create_shorts": true,
+    "generate_titles": false,
+    "upload_shorts": false
+  },
+  "schedule_config": {
+    "daily_schedule": {
+      "monday": "20:00",
+      "tuesday": "20:00",
+      "wednesday": "20:00",
+      "thursday": "20:00",
+      "friday": "20:00",
+      "saturday": "11:00",
+      "sunday": "11:00"
+    },
+    "videos_per_day": 1,
+    "min_interval_hours": 4,
+    "max_videos_per_week": 8,
+    "timezone": "Asia/Kolkata"
+  }
+}

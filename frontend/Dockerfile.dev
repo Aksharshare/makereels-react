@@ -1,0 +1,21 @@
+# Development Dockerfile for React frontend with hot reload
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code (will be overridden by volume mount)
+COPY . .
+
+# Expose port 3000 for React dev server
+EXPOSE 3000
+
+# Start React development server with hot reload
+CMD ["npm", "start"]
+
