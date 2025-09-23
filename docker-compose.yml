@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # Python Backend Service
+  backend:
+    build: 
+      context: ./automationtool
+      dockerfile: Dockerfile
+    container_name: makereels-backend
+    restart: unless-stopped
+    environment:
+      - PORT=8000
+      - PYTHONPATH=/app
+    volumes:
+      - ./automationtool/input:/app/input
+      - ./automationtool/output:/app/output
+      - ./automationtool/config:/app/config
+      - ./automationtool/logs:/app/logs
+    networks:
+      - makereels-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # React Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: makereels-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./ssl-certs:/etc/letsencrypt:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - makereels-network
+    environment:
+      - REACT_APP_API_URL=http://backend:8000
+
+networks:
+  makereels-network:
+    driver: bridge
+
+volumes:
+  input_data:
+  output_data:
+  config_data:

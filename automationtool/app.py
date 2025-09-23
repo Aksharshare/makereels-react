@@ -19,7 +19,7 @@ if str(project_root) not in sys.path:
 app = Flask(__name__)
 
 # Enable CORS for frontend communication
-CORS(app, origins=['http://localhost:3000', 'https://makereels.live'])
+CORS(app, origins=['http://localhost:3000', 'https://makereels.live', 'http://frontend:80', 'https://frontend:443'])
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -587,13 +587,14 @@ def api_upload_file():
         input_dir = Path(input_folder)
         input_dir.mkdir(exist_ok=True)
         
-        # Clean up old input files
+        # Clean up old input files (but keep the current upload)
         for old_file in input_dir.glob('*'):
-            try:
-                old_file.unlink()
-                logger.info(f"🗑️ Removed old input file: {old_file.name}")
-            except Exception as e:
-                logger.warning(f"⚠️ Could not remove old file {old_file.name}: {str(e)}")
+            if old_file.name != file.filename:  # Don't delete the file we're about to save
+                try:
+                    old_file.unlink()
+                    logger.info(f"🗑️ Removed old input file: {old_file.name}")
+                except Exception as e:
+                    logger.warning(f"⚠️ Could not remove old file {old_file.name}: {str(e)}")
         
         # Save uploaded file
         file_path = input_dir / file.filename
@@ -609,7 +610,8 @@ def api_upload_file():
         response_data = {
             'message': 'Video uploaded successfully! Please provide your phone number to start processing.',
             'status': 'UPLOADED',
-            'filename': file.filename
+            'filename': file.filename,
+            'task_id': str(uuid.uuid4())  # Generate a task ID for the frontend
         }
         logger.info(f"✅ File uploaded successfully: {file.filename}")
         return jsonify(response_data)
@@ -656,13 +658,14 @@ def upload_file():
         input_dir = Path(input_folder)
         input_dir.mkdir(exist_ok=True)
         
-        # Clean up old input files
+        # Clean up old input files (but keep the current upload)
         for old_file in input_dir.glob('*'):
-            try:
-                old_file.unlink()
-                logger.info(f"🗑️ Removed old input file: {old_file.name}")
-            except Exception as e:
-                logger.warning(f"⚠️ Could not remove old file {old_file.name}: {str(e)}")
+            if old_file.name != file.filename:  # Don't delete the file we're about to save
+                try:
+                    old_file.unlink()
+                    logger.info(f"🗑️ Removed old input file: {old_file.name}")
+                except Exception as e:
+                    logger.warning(f"⚠️ Could not remove old file {old_file.name}: {str(e)}")
         
         # Save uploaded file
         file_path = input_dir / file.filename
@@ -678,7 +681,8 @@ def upload_file():
         response_data = {
             'message': 'Video uploaded successfully! Please provide your phone number to start processing.',
             'status': 'UPLOADED',
-            'filename': file.filename
+            'filename': file.filename,
+            'task_id': str(uuid.uuid4())  # Generate a task ID for the frontend
         }
         logger.info(f"✅ File uploaded successfully: {file.filename}")
         return jsonify(response_data)
@@ -771,8 +775,16 @@ def api_start_processing():
         input_folder, output_folder = get_config_paths()
         input_dir = Path(input_folder)
         
-        # Find the uploaded video file
-        video_files = list(input_dir.glob('*.mp4')) + list(input_dir.glob('*.mov')) + list(input_dir.glob('*.avi')) + list(input_dir.glob('*.mkv'))
+        # Find the uploaded video file (case-insensitive)
+        video_files = (list(input_dir.glob('*.mp4')) + list(input_dir.glob('*.MP4')) + 
+                      list(input_dir.glob('*.mov')) + list(input_dir.glob('*.MOV')) + 
+                      list(input_dir.glob('*.avi')) + list(input_dir.glob('*.AVI')) + 
+                      list(input_dir.glob('*.mkv')) + list(input_dir.glob('*.MKV')))
+        
+        # Debug logging
+        logger.info(f"🔍 Looking for video files in: {input_dir}")
+        logger.info(f"🔍 Found files: {list(input_dir.glob('*'))}")
+        logger.info(f"🔍 Video files found: {video_files}")
         
         if not video_files:
             return jsonify({'error': 'No video file found. Please upload a video first.'}), 400

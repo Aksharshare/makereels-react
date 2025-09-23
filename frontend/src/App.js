@@ -251,13 +251,13 @@ function App() {
            if (data.status === 'PROCESSING') {
              setProcessingStatus('PROCESSING');
              console.log('Status set to PROCESSING');
-           } else           if (data.status === 'SUCCESS') {
+           } else if (data.result?.status === 'SUCCESS') {
             // Transform the short clips to match expected format
             const shortClips = data.result?.short_clips || [];
             const transformedClips = shortClips.map(clip => ({
               filename: clip.filename,
               size: clip.size * 1024 * 1024, // Convert MB to bytes
-              download_url: `http://localhost:8000${clip.url}`
+              download_url: `http://localhost${clip.url}`
             }));
             setResultFiles(transformedClips);
             setProcessingStatus('completed');

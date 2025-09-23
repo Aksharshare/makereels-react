@@ -195,8 +195,8 @@ def get_all_videos(folder_path: Path) -> list[Path]:
         logger.error(f"Error: Input folder '{folder_path}' not found!")
         sys.exit(1)
     
-    # Supported video formats
-    video_extensions = ['.mp4', '.mov', '.avi', '.mkv']
+    # Supported video formats (case-insensitive)
+    video_extensions = ['.mp4', '.MP4', '.mov', '.MOV', '.avi', '.AVI', '.mkv', '.MKV']
     
     # Get all video files in the folder
     video_files = []

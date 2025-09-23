@@ -1,6 +1,6 @@
 {
-  "input_folder": "C:\\\\Users\\\\sendt\\\\Downloads\\\\makereels\\\\automationtool\\\\input",
-  "output_folder": "C:\\\\Users\\\\sendt\\\\Downloads\\\\makereels\\\\automationtool\\\\output",
+  "input_folder": "/app/input",
+  "output_folder": "/app/output",
   "pipeline_steps": {
     "add_subtitles": true,
     "trim_silence": true,
