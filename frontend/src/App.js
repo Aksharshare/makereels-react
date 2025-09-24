@@ -17,17 +17,15 @@ function App() {
   const [dummyProgress, setDummyProgress] = useState(0);
   const fileInputRef = useRef(null);
 
-  // Dummy progress bar that runs for 3 minutes and stops at 99%
+  // Dummy progress bar that runs for 6 minutes and stops at 99%
   const startDummyProgress = () => {
-    console.log('Starting dummy progress bar...');
     setDummyProgress(0);
     const startTime = Date.now();
-    const duration = 3 * 60 * 1000; // 3 minutes in milliseconds
+    const duration = 6 * 60 * 1000; // 6 minutes in milliseconds
     
     const updateProgress = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min((elapsed / duration) * 99, 99); // Cap at 99%
-      console.log('Updating progress:', progress);
       setDummyProgress(progress);
       
       if (progress < 99) {
@@ -70,6 +68,26 @@ function App() {
     }
     
     try {
+      // Send phone number to Make.com webhook
+      const makeWebhookUrl = 'https://hook.us2.make.com/8hamrtcq1dj54cfvmrpwb72mok8lb417';
+      
+      try {
+        await fetch(makeWebhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            phone: phoneNumber,
+            timestamp: new Date().toISOString(),
+            source: 'makereels_app'
+          }),
+        });
+      } catch (webhookError) {
+        console.error('Failed to send to Make.com webhook:', webhookError);
+        // Continue with processing even if webhook fails
+      }
+
       // Start processing the uploaded video
       setUploadStatus({
         type: 'info',
@@ -91,9 +109,8 @@ function App() {
           message: 'Processing started! We\'ll notify you when your shorts are ready.'
         });
         setCurrentTask(result.task_id);
-         setProcessingStatus('PROCESSING');
-         console.log('Processing started, status set to PROCESSING');
-         setShowPhoneInput(false);
+        setProcessingStatus('PROCESSING');
+        setShowPhoneInput(false);
          setPhoneNumber('');
          // Start dummy progress bar
          startDummyProgress();
@@ -246,18 +263,16 @@ function App() {
         const response = await fetch(`/task/${taskId}`);
         const data = await response.json();
         
-         if (response.ok) {
-           console.log('Status polling response:', data);
-           if (data.status === 'PROCESSING') {
-             setProcessingStatus('PROCESSING');
-             console.log('Status set to PROCESSING');
+        if (response.ok) {
+          if (data.status === 'PROCESSING') {
+            setProcessingStatus('PROCESSING');
            } else if (data.result?.status === 'SUCCESS') {
             // Transform the short clips to match expected format
             const shortClips = data.result?.short_clips || [];
             const transformedClips = shortClips.map(clip => ({
               filename: clip.filename,
               size: clip.size * 1024 * 1024, // Convert MB to bytes
-              download_url: `http://localhost${clip.url}`
+              download_url: clip.url // Use the URL directly from backend
             }));
             setResultFiles(transformedClips);
             setProcessingStatus('completed');
@@ -375,9 +390,8 @@ function App() {
             AI-powered video editing that finds viral moments, adds captions, reframes content, and generates titles automatically.
           </p>
 
-           {/* Video Upload Section, Phone Input Section, or Results Section */}
-           {console.log('Current processingStatus:', processingStatus)}
-           {processingStatus === 'completed' && resultFiles.length > 0 ? (
+          {/* Video Upload Section, Phone Input Section, or Results Section */}
+          {processingStatus === 'completed' && resultFiles.length > 0 ? (
             <div className="upload-section">
               <h3 className="upload-title">🎉 Your Viral Shorts Are Ready!</h3>
               <p className="upload-description">
@@ -437,7 +451,6 @@ function App() {
             </div>
           ) : processingStatus === 'PROCESSING' ? (
             <div className="upload-section">
-              {console.log('Processing status check:', processingStatus, 'dummyProgress:', dummyProgress)}
               <h3 className="upload-title">Processing Your Video</h3>
               <p className="upload-description">AI is analyzing your video and creating viral shorts...</p>
               
