@@ -3,9 +3,7 @@ version: '3.8'
 services:
   # Python Backend Service
   backend:
-    build: 
-      context: ./automationtool
-      dockerfile: Dockerfile
+    image: aksharshare/makereels-backend:latest
     container_name: makereels-backend
     restart: unless-stopped
     environment:
@@ -14,7 +12,6 @@ services:
     volumes:
       - ./automationtool/input:/app/input
       - ./automationtool/output:/app/output
-      - ./automationtool/config:/app/config
       - ./automationtool/logs:/app/logs
     networks:
       - makereels-network
@@ -27,16 +24,14 @@ services:
 
   # React Frontend Service
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: aksharshare/makereels-frontend:latest
     container_name: makereels-frontend
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./ssl-certs:/etc/letsencrypt:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       backend:
         condition: service_healthy

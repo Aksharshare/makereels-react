@@ -28,9 +28,10 @@ chmod 755 automationtool/input
 chmod 755 automationtool/output
 chmod 755 automationtool/logs
 
-# Build and start services
-echo "🔨 Building and starting services..."
-docker-compose up --build -d
+# Pull and start services
+echo "🔨 Pulling and starting services..."
+docker-compose pull
+docker-compose up -d
 
 # Wait for services to be healthy
 echo "⏳ Waiting for services to be healthy..."
