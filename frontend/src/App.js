@@ -17,6 +17,29 @@ function App() {
   const [dummyProgress, setDummyProgress] = useState(0);
   const fileInputRef = useRef(null);
 
+  // Phone number validation function
+  const validatePhoneNumber = (phone) => {
+    // Remove all non-digit characters for validation
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Check if it's empty
+    if (!cleanPhone) {
+      return { isValid: false, message: 'Please enter your phone number' };
+    }
+    
+    // Check length (7-15 digits is reasonable for international numbers)
+    if (cleanPhone.length < 7 || cleanPhone.length > 15) {
+      return { isValid: false, message: 'Please enter a valid phone number (7-15 digits)' };
+    }
+    
+    // Check if it contains only digits (after cleaning)
+    if (!/^\d+$/.test(cleanPhone)) {
+      return { isValid: false, message: 'Phone number should contain only digits' };
+    }
+    
+    return { isValid: true, message: '' };
+  };
+
   // Dummy progress bar that runs for 6 minutes and stops at 99%
   const startDummyProgress = () => {
     setDummyProgress(0);
@@ -38,7 +61,16 @@ function App() {
 
   const handleJoinBeta = async (e) => {
     e.preventDefault();
-    if (!phoneNumber.trim()) return;
+    
+    // Validate phone number
+    const phoneValidation = validatePhoneNumber(phoneNumber);
+    if (!phoneValidation.isValid) {
+      setUploadStatus({
+        type: 'error',
+        message: phoneValidation.message
+      });
+      return;
+    }
     
     setIsLoading(true);
     // Simulate API call
@@ -51,10 +83,13 @@ function App() {
 
   const handleGetShorts = async (e) => {
     e.preventDefault();
-    if (!phoneNumber.trim()) {
+    
+    // Validate phone number
+    const phoneValidation = validatePhoneNumber(phoneNumber);
+    if (!phoneValidation.isValid) {
       setUploadStatus({
         type: 'error',
-        message: 'Please enter your phone number'
+        message: phoneValidation.message
       });
       return;
     }
@@ -154,12 +189,12 @@ function App() {
         return;
       }
       
-      // Validate file size (max 500MB)
-      const maxSize = 500 * 1024 * 1024; // 500MB
+      // Validate file size (max 100MB)
+      const maxSize = 100 * 1024 * 1024; // 100MB
       if (file.size > maxSize) {
         setUploadStatus({
           type: 'error',
-          message: 'File size must be less than 500MB'
+          message: 'File size must be less than 100MB'
         });
         return;
       }
@@ -529,6 +564,67 @@ function App() {
                   </div>
                 )}
                 
+                {/* Client Logos Carousel */}
+                <div className="clients-carousel">
+                  <div className="clients-track">
+                    <div className="client-logo">
+                      <img src="/c1.png" alt="Client 1" />
+                    </div>
+                    <div className="client-logo">
+                      <img src="/c2.png" alt="Client 2" />
+                    </div>
+                    <div className="client-logo">
+                      <img src="/c3.png" alt="Client 3" />
+                    </div>
+                    <div className="client-logo">
+                      <img src="/c4.png" alt="Client 4" />
+                    </div>
+                    <div className="client-logo">
+                      <img src="/c5.png" alt="Client 5" />
+                    </div>
+                    <div className="client-logo">
+                      <img src="/c6.png" alt="Client 6" />
+                    </div>
+                    <div className="client-logo">
+                      <img src="/c7.png" alt="Client 7" />
+                    </div>
+                    <div className="client-logo">
+                      <img src="/c8.png" alt="Client 8" />
+                    </div>
+                    <div className="client-logo">
+                      <img src="/c9.png" alt="Client 9" />
+                    </div>
+                    {/* Duplicate for seamless loop */}
+                    <div className="client-logo">
+                      <img src="/c1.png" alt="Client 1" />
+                    </div>
+                    <div className="client-logo">
+                      <img src="/c2.png" alt="Client 2" />
+                    </div>
+                    <div className="client-logo">
+                      <img src="/c3.png" alt="Client 3" />
+                    </div>
+                    <div className="client-logo">
+                      <img src="/c4.png" alt="Client 4" />
+                    </div>
+                    <div className="client-logo">
+                      <img src="/c5.png" alt="Client 5" />
+                    </div>
+                    <div className="client-logo">
+                      <img src="/c6.png" alt="Client 6" />
+                    </div>
+                    <div className="client-logo">
+                      <img src="/c7.png" alt="Client 7" />
+                    </div>
+                    <div className="client-logo">
+                      <img src="/c8.png" alt="Client 8" />
+                    </div>
+                    <div className="client-logo">
+                      <img src="/c9.png" alt="Client 9" />
+                    </div>
+                  </div>
+                </div>
+                
                 {uploadStatus && (
                   <div className={`upload-status ${uploadStatus.type}`}>
                     {uploadStatus.type === 'success' ? '✅' : '❌'} {uploadStatus.message}
@@ -631,6 +727,27 @@ function App() {
 
         </div>
       </main>
+      
+      {/* Background Video Section */}
+      <div className="bg-video-section">
+        <video 
+          className="bg-video" 
+          autoPlay 
+          muted 
+          loop 
+          playsInline
+        >
+          <source src="/bgshorts.mp4" type="video/mp4" />
+        </video>
+        <div className="bg-video-fade"></div>
+      </div>
+      
+      {/* Footer */}
+      <footer className="footer">
+        <div className="footer-content">
+          <p className="footer-text">© 2025 Makereels.live. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 }

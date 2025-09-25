@@ -562,13 +562,13 @@ def api_upload_file():
         if file_ext not in allowed_extensions:
             return jsonify({'error': f'Unsupported file type: {file_ext}. Supported types: {", ".join(allowed_extensions)}'}), 400
         
-        # Check file size (max 500MB)
+        # Check file size (max 100MB)
         file.seek(0, 2)  # Seek to end
         file_size = file.tell()
         file.seek(0)  # Reset to beginning
-        max_size = 500 * 1024 * 1024  # 500MB
+        max_size = 100 * 1024 * 1024  # 100MB
         if file_size > max_size:
-            return jsonify({'error': f'File too large. Maximum size: 500MB, your file: {file_size / (1024*1024):.1f}MB'}), 400
+            return jsonify({'error': f'File too large. Maximum size: 100MB, your file: {file_size / (1024*1024):.1f}MB'}), 400
         
         # Get paths from config
         input_folder, output_folder = get_config_paths()
