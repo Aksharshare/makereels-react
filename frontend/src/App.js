@@ -1,5 +1,8 @@
 import React, { useState, useRef } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import './App.css';
+import PricingPage from './PricingPage';
+import FeaturesPage from './FeaturesPage';
 
 function App() {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -397,21 +400,27 @@ function App() {
   };
 
   return (
-    <div className="App">
-      {/* Header */}
-      <header className="header">
-        <div className="logo">
-          <img src="/assets/images/headerlogo.png" alt="MAKEREELS" className="logo-image" />
-        </div>
-        <nav className="nav">
-          <a href="#features" className="nav-link">Features</a>
-          <a href="#pricing" className="nav-link">Pricing</a>
-          <button className="sign-up-btn">Sign Up</button>
-        </nav>
-      </header>
+    <Router>
+      <div className="App">
+        {/* Header */}
+        <header className="header">
+          <div className="logo">
+            <Link to="/">
+              <img src="/assets/images/headerlogo.png" alt="MAKEREELS" className="logo-image" />
+            </Link>
+          </div>
+          <nav className="nav">
+            <Link to="/features" className="nav-link">Features</Link>
+            <Link to="/pricing" className="nav-link">Pricing</Link>
+            <button className="sign-up-btn">Sign Up</button>
+          </nav>
+        </header>
 
-      {/* Hero Section */}
-      <main className="hero">
+        <Routes>
+          <Route path="/" element={
+            <>
+              {/* Hero Section */}
+              <main className="hero">
         <div className="hero-content">
           <h1 className="hero-title">
             Post more <span className="lightning">⚡</span> Grow faster
@@ -742,13 +751,19 @@ function App() {
         <div className="bg-video-fade"></div>
       </div>
       
-      {/* Footer */}
-      <footer className="footer">
-        <div className="footer-content">
-          <p className="footer-text">© 2025 Makereels.live. All rights reserved.</p>
-        </div>
-      </footer>
-    </div>
+              {/* Footer */}
+              <footer className="footer">
+                <div className="footer-content">
+                  <p className="footer-text">© 2025 Makereels.live. All rights reserved.</p>
+                </div>
+              </footer>
+            </>
+          } />
+          <Route path="/features" element={<FeaturesPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

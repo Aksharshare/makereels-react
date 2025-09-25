@@ -9,6 +9,8 @@ body {
   background: #ffffff;
   min-height: 100vh;
   position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* Subtle vertical stripes background */
@@ -24,6 +26,7 @@ body::before {
   background-size: 100px 100%;
   z-index: -1;
   opacity: 0.3;
+  pointer-events: none;
 }
 
 .App {
@@ -79,6 +82,19 @@ body::before {
   color: #6366f1;
 }
 
+/* Make sure Link components from react-router-dom look the same */
+a.nav-link {
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 16px;
+  transition: color 0.2s ease;
+}
+
+a.nav-link:hover {
+  color: #6366f1;
+}
+
 .sign-up-btn {
   background: #8b5cf6;
   color: white;
@@ -98,12 +114,13 @@ body::before {
 
 /* Hero Section */
 .hero {
-  flex: 1;
   display: flex;
   align-items: flex-start;
   justify-content: center;
   padding: 0px 20px 5px 20px;
   text-align: center;
+  min-height: auto;
+  flex-shrink: 0;
 }
 
 .hero-content {
@@ -172,8 +189,9 @@ body::before {
 
 /* Upload Section */
 .upload-section {
-  margin-top: 5px;
-  margin-bottom: 10px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  padding: 20px 0;
 }
 
 .upload-title {
@@ -276,7 +294,7 @@ body::before {
   width: 500px;
   height: 70px;
   overflow: hidden;
-  margin: 20px auto -50px auto;
+  margin: 20px auto 0 auto;
   position: relative;
   display: block;
   left: -60px;
@@ -978,6 +996,7 @@ body::before {
   
   .bg-video-section {
     height: 140px;
+    margin-top: 0;
   }
   
   .client-logo {
@@ -1071,6 +1090,10 @@ body::before {
 
 /* Extra small mobile devices */
 @media (max-width: 480px) {
+  .bg-video-section {
+    margin-top: 0;
+  }
+
   .clients-carousel {
     width: 100vw;
     height: 90px;
