@@ -11,6 +11,8 @@ body {
   position: relative;
   overflow-x: hidden;
   overflow-y: auto;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Subtle vertical stripes background */
@@ -31,6 +33,16 @@ body::before {
 
 .App {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Main content area should grow to push footer down */
+main {
+  flex: 1;
   display: flex;
   flex-direction: column;
 }
@@ -115,12 +127,13 @@ a.nav-link:hover {
 /* Hero Section */
 .hero {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   padding: 0px 20px 5px 20px;
   text-align: center;
   min-height: auto;
   flex-shrink: 0;
+  flex: 1;
 }
 
 .hero-content {
@@ -291,13 +304,13 @@ a.nav-link:hover {
 
 /* Client Logos Carousel */
 .clients-carousel {
-  width: 500px;
+  width: 100%;
+  max-width: 500px;
   height: 70px;
   overflow: hidden;
   margin: 20px auto 0 auto;
   position: relative;
   display: block;
-  left: -60px;
   z-index: 3;
   border-radius: 0;
   background: #ffffff;
@@ -361,11 +374,13 @@ a.nav-link:hover {
 .bg-video-section {
   position: relative;
   width: 100%;
+  max-width: 100%;
   height: 180px;
   overflow: hidden;
   margin-top: -50px;
   z-index: 1;
   border-radius: 0;
+  flex-shrink: 0;
 }
 
 .bg-video {
@@ -397,8 +412,9 @@ a.nav-link:hover {
   background-color: #000000;
   color: #9ca3af;
   padding: 10px 0;
-  margin-top: 0;
+  margin-top: auto;
   border-top: 1px solid #333333;
+  flex-shrink: 0;
 }
 
 .footer-content {
@@ -899,6 +915,8 @@ a.nav-link:hover {
 @media (max-width: 768px) {
   .header {
     padding: 16px 20px;
+    width: 100%;
+    max-width: 100%;
   }
   
   .nav {
@@ -916,6 +934,8 @@ a.nav-link:hover {
   
   .hero {
     padding: 40px 20px;
+    width: 100%;
+    max-width: 100%;
   }
   
   .hero-title {
@@ -946,6 +966,7 @@ a.nav-link:hover {
   
   .upload-container {
     max-width: 100%;
+    width: 100%;
   }
   
   .file-input-label {
@@ -980,6 +1001,8 @@ a.nav-link:hover {
     flex-direction: column;
     gap: 16px;
     padding: 16px;
+    width: 100%;
+    max-width: 100%;
   }
   
   .nav {
@@ -997,6 +1020,8 @@ a.nav-link:hover {
   .bg-video-section {
     height: 140px;
     margin-top: 0;
+    width: 100%;
+    max-width: 100%;
   }
   
   .client-logo {
@@ -1008,6 +1033,8 @@ a.nav-link:hover {
   .clients-carousel {
     margin-top: 15px;
     margin-bottom: 10px;
+    width: 100%;
+    max-width: 100%;
   }
 }
 
@@ -1064,11 +1091,12 @@ a.nav-link:hover {
 /* Responsive styles for client logos */
 @media (max-width: 768px) {
   .clients-carousel {
-    width: 100vw;
+    width: 100%;
+    max-width: 100%;
     height: 100px;
-    margin: 15px 0 10px 0;
-    left: 50%;
-    transform: translateX(-50%);
+    margin: 15px auto 10px auto;
+    left: 0;
+    transform: none;
   }
   
   .client-logo {
@@ -1095,11 +1123,12 @@ a.nav-link:hover {
   }
 
   .clients-carousel {
-    width: 100vw;
+    width: 100%;
+    max-width: 100%;
     height: 90px;
-    margin: 10px 0 8px 0;
-    left: 50%;
-    transform: translateX(-50%);
+    margin: 10px auto 8px auto;
+    left: 0;
+    transform: none;
   }
   
   .client-logo {
