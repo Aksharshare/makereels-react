@@ -499,6 +499,20 @@ function App() {
               <p className="upload-description">AI is analyzing your video and creating viral shorts...</p>
               
               <div className="upload-container">
+                {/* YouTube Video for entertainment during processing */}
+                <div className="youtube-container">
+                  <iframe 
+                    width="100%" 
+                    height="100%" 
+                    src="https://www.youtube.com/embed/9CQX9kq4BPM?autoplay=1&mute=0&controls=1&rel=0&modestbranding=1" 
+                    title="YouTube video player" 
+                    frameBorder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    allowFullScreen
+                    className="youtube-iframe">
+                  </iframe>
+                </div>
+                
                 <div className="processing-info">
                   <div className="processing-spinner">🎬</div>
                   

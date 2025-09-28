@@ -476,6 +476,27 @@ a.nav-link:hover {
   display: block;
 }
 
+/* YouTube Video Container */
+.youtube-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 270px;
+  height: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.youtube-iframe {
+  border-radius: 12px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .upload-btn {
   width: 100%;
   background: linear-gradient(135deg, #10b981, #059669);
