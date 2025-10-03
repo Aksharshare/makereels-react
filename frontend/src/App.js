@@ -304,7 +304,7 @@ function App() {
         if (response.ok) {
           if (data.status === 'PROCESSING') {
             setProcessingStatus('PROCESSING');
-           } else if (data.result?.status === 'SUCCESS') {
+          } else if (data.status === 'SUCCESS' && data.result?.status === 'SUCCESS') {
             // Transform the short clips to match expected format
             const shortClips = data.result?.short_clips || [];
             const transformedClips = shortClips.map(clip => ({
@@ -319,8 +319,9 @@ function App() {
           } else if (data.status === 'FAILURE') {
             setUploadStatus({
               type: 'error',
-              message: `Processing failed: ${data.error}`
+              message: `Processing failed: ${data.error || data.message || 'Unknown error'}`
             });
+            setProcessingStatus('failed');
             clearInterval(pollInterval);
           }
         }

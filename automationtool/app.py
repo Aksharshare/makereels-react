@@ -10,6 +10,7 @@ from pathlib import Path
 from flask import Flask, request, jsonify, render_template_string, render_template, send_from_directory, redirect, url_for
 from flask_cors import CORS
 import logging
+from datetime import datetime
 
 # Add the project root to Python path
 project_root = Path(__file__).parent.absolute()
@@ -31,9 +32,97 @@ processing_status = {}
 # Global storage for background processing
 background_tasks = {}
 
-def process_video_background(task_id, filename):
-    """Process video in background thread"""
+# Master log functions
+def log_session_start(session_id, filename, user_phone, device_info=None):
+    """Log session start to master.log"""
     try:
+        with open("master.log", "a", encoding='utf-8') as f:
+            f.write("=" * 80 + "\n")
+            f.write(f"SESSION: {session_id}\n")
+            f.write(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"User: {user_phone}\n")
+            f.write(f"Device: {device_info or 'Unknown'}\n")
+            f.write(f"Input: {filename}\n")
+            f.write("=" * 80 + "\n\n")
+    except Exception as e:
+        logger.warning(f"Could not write to master log: {str(e)}")
+
+def log_frontend_event(session_id, message):
+    """Log frontend event to master.log"""
+    try:
+        with open("master.log", "a", encoding='utf-8') as f:
+            f.write(f"FRONTEND LOG:\n")
+            f.write(f"{datetime.now().strftime('%H:%M:%S')} - {message}\n")
+    except Exception as e:
+        logger.warning(f"Could not write frontend log: {str(e)}")
+
+def log_backend_event(session_id, message):
+    """Log backend event to master.log"""
+    try:
+        with open("master.log", "a", encoding='utf-8') as f:
+            f.write(f"BACKEND LOG:\n")
+            f.write(f"{datetime.now().strftime('%H:%M:%S')} - {message}\n")
+    except Exception as e:
+        logger.warning(f"Could not write backend log: {str(e)}")
+
+def log_pipeline_to_master(session_id):
+    """Copy pipeline.log content to master.log"""
+    try:
+        if os.path.exists("pipeline.log"):
+            with open("pipeline.log", "r", encoding='utf-8') as pipeline_f:
+                pipeline_content = pipeline_f.read()
+            
+            with open("master.log", "a", encoding='utf-8') as master_f:
+                master_f.write(f"PIPELINE LOG:\n")
+                master_f.write(f"{datetime.now().strftime('%H:%M:%S')} - Starting video processing\n")
+                # Clean up the pipeline content for readability
+                lines = pipeline_content.split('\n')
+                for line in lines:
+                    if line.strip():
+                        # Extract timestamp and message for readability
+                        if ' - ' in line:
+                            timestamp_part = line.split(' - ')[0]
+                            message_part = ' - '.join(line.split(' - ')[1:])
+                            master_f.write(f"{timestamp_part} - {message_part}\n")
+                        else:
+                            master_f.write(f"{line}\n")
+                master_f.write(f"{datetime.now().strftime('%H:%M:%S')} - Pipeline processing completed\n\n")
+    except Exception as e:
+        logger.warning(f"Could not copy pipeline log: {str(e)}")
+
+def log_session_end(session_id, result, start_time):
+    """Log session end to master.log"""
+    try:
+        end_time = datetime.now()
+        processing_time = (end_time - start_time).total_seconds()
+        
+        with open("master.log", "a", encoding='utf-8') as f:
+            f.write(f"RESULT:\n")
+            f.write(f"Status: {result.get('status', 'UNKNOWN')}\n")
+            f.write(f"Processing Time: {processing_time:.1f} seconds\n")
+            
+            if result.get('status') == 'SUCCESS':
+                short_clips = result.get('short_clips', [])
+                f.write(f"Output Files: {len(short_clips)} short clips\n")
+                for clip in short_clips:
+                    f.write(f"- {clip.get('filename', 'unknown')} ({clip.get('size', 0):.1f} MB)\n")
+            else:
+                f.write(f"Error: {result.get('error', 'Unknown error')}\n")
+            
+            f.write(f"Completed: {end_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write("=" * 80 + "\n\n")
+    except Exception as e:
+        logger.warning(f"Could not write session end log: {str(e)}")
+
+def process_video_background(task_id, filename, user_phone="Unknown"):
+    """Process video in background thread"""
+    start_time = datetime.now()
+    
+    try:
+        # Log session start
+        log_session_start(task_id, filename, user_phone)
+        log_backend_event(task_id, f"Background processing started for task {task_id}: {filename}")
+        
         background_tasks[task_id] = {
             'status': 'PROCESSING',
             'message': 'Starting video processing...',
@@ -43,6 +132,9 @@ def process_video_background(task_id, filename):
         logger.info(f"🔍 Starting background processing for task {task_id}: {filename}")
         result = process_video_direct(filename)
         
+        # Copy pipeline log to master log
+        log_pipeline_to_master(task_id)
+        
         if result['status'] == 'SUCCESS':
             background_tasks[task_id] = {
                 'status': 'SUCCESS',
@@ -50,6 +142,7 @@ def process_video_background(task_id, filename):
                 'progress': 100,
                 'result': result
             }
+            log_backend_event(task_id, f"Processing completed successfully - {len(result.get('short_clips', []))} clips generated")
         else:
             background_tasks[task_id] = {
                 'status': 'FAILURE',
@@ -57,6 +150,10 @@ def process_video_background(task_id, filename):
                 'progress': 100,
                 'error': result.get('error', 'Unknown error')
             }
+            log_backend_event(task_id, f"Processing failed: {result.get('error', 'Unknown error')}")
+        
+        # Log session end
+        log_session_end(task_id, result, start_time)
             
     except Exception as e:
         logger.error(f"❌ Background processing error for task {task_id}: {str(e)}")
@@ -66,6 +163,11 @@ def process_video_background(task_id, filename):
             'progress': 100,
             'error': str(e)
         }
+        log_backend_event(task_id, f"Unexpected error: {str(e)}")
+        
+        # Log session end with error
+        error_result = {'status': 'FAILURE', 'error': str(e)}
+        log_session_end(task_id, error_result, start_time)
 
 # Import the video processing function from run_pipeline
 def process_video_direct(filename):
@@ -211,9 +313,18 @@ def process_video_direct(filename):
             logger.error(f"STDOUT: {result.stdout}")
             logger.error(f"STDERR: {result.stderr}")
             
+            # Extract more meaningful error message
+            error_message = "Video processing failed"
+            if "ffmpeg error" in result.stderr.lower():
+                error_message = "Video format not supported or corrupted"
+            elif "timeout" in result.stderr.lower():
+                error_message = "Processing timeout - video may be too large"
+            elif "permission" in result.stderr.lower():
+                error_message = "Permission denied - check file access"
+            
             return {
                 'status': 'FAILURE',
-                'error': 'Pipeline processing failed',
+                'error': error_message,
                 'details': result.stderr,
                 'return_code': result.returncode,
                 'stdout': result.stdout
@@ -800,8 +911,14 @@ def api_start_processing():
         task_id = str(uuid.uuid4())
         logger.info(f"🔍 Starting background processing for: {filename} with task ID: {task_id} (Phone: {phone_number})")
         
+        # Log backend events
+        log_backend_event(task_id, f"API: POST /api/start-processing received")
+        log_backend_event(task_id, f"Phone validation: SUCCESS")
+        log_backend_event(task_id, f"Video file found: {filename}")
+        log_backend_event(task_id, f"Background task started")
+        
         # Start background thread
-        thread = threading.Thread(target=process_video_background, args=(task_id, filename))
+        thread = threading.Thread(target=process_video_background, args=(task_id, filename, phone_number))
         thread.daemon = True
         thread.start()
         
@@ -822,6 +939,24 @@ def api_start_processing():
             'details': str(e)
         }), 500
 
+@app.route('/api/log-frontend', methods=['POST'])
+def api_log_frontend():
+    """Log frontend events to master log"""
+    try:
+        data = request.get_json()
+        session_id = data.get('session_id')
+        message = data.get('message')
+        
+        if session_id and message:
+            log_frontend_event(session_id, message)
+            return jsonify({'status': 'success'})
+        else:
+            return jsonify({'error': 'Missing session_id or message'}), 400
+            
+    except Exception as e:
+        logger.error(f"Error logging frontend event: {str(e)}")
+        return jsonify({'error': 'Failed to log frontend event'}), 500
+
 @app.route('/api/task/<task_id>')
 def api_get_task_status(task_id):
     """Get status of background task (API endpoint for frontend)"""
@@ -829,6 +964,10 @@ def api_get_task_status(task_id):
         return jsonify({'error': 'Task not found'}), 404
     
     task_info = background_tasks[task_id]
+    
+    # Log backend polling
+    log_backend_event(task_id, f"API: GET /task/{task_id} - Status: {task_info.get('status', 'UNKNOWN')}")
+    
     return jsonify(task_info)
 
 @app.route('/task/<task_id>')

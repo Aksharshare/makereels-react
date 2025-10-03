@@ -196,12 +196,17 @@ def get_all_videos(folder_path: Path) -> list[Path]:
         sys.exit(1)
     
     # Supported video formats (case-insensitive)
-    video_extensions = ['.mp4', '.MP4', '.mov', '.MOV', '.avi', '.AVI', '.mkv', '.MKV']
+    video_extensions = ['.mp4', '.mov', '.avi', '.mkv']
     
-    # Get all video files in the folder
+    # Get all video files in the folder using case-insensitive search
     video_files = []
     for ext in video_extensions:
+        # Use both lowercase and uppercase patterns to be safe
         video_files.extend(folder_path.glob(f'*{ext}'))
+        video_files.extend(folder_path.glob(f'*{ext.upper()}'))
+    
+    # Remove duplicates by converting to set and back to list
+    video_files = list(set(video_files))
     
     if not video_files:
         logger.error(f"Error: No video files found in '{folder_path}'!")
