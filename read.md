@@ -1,3 +1,6 @@
+cd automationtool; .venv\Scripts\activate; python app.py
+cd frontend; npm start
+
 #Backend
 python -m venv .venv
 source .venv/bin/activate  # Linux/Mac

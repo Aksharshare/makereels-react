@@ -127,10 +127,6 @@ function App() {
       }
 
       // Start processing the uploaded video
-      setUploadStatus({
-        type: 'info',
-        message: 'Starting video processing...'
-      });
       
       const response = await fetch('/api/start-processing', {
         method: 'POST',
@@ -312,9 +308,22 @@ function App() {
               size: clip.size * 1024 * 1024, // Convert MB to bytes
               download_url: clip.url // Use the URL directly from backend
             }));
+            
+            // If no short clips but processed video exists, include it
+            if (transformedClips.length === 0 && data.result?.processed_video) {
+              const processedVideo = data.result.processed_video;
+              transformedClips.push({
+                filename: processedVideo.filename,
+                size: processedVideo.size * 1024 * 1024, // Convert MB to bytes
+                download_url: processedVideo.url,
+                isProcessedVideo: true // Flag to identify processed video
+              });
+            }
+            
             setResultFiles(transformedClips);
             setProcessingStatus('completed');
             setDummyProgress(100); // Complete the progress bar
+            setUploadStatus(null); // Clear the "Processing started" message
             clearInterval(pollInterval);
           } else if (data.status === 'FAILURE') {
             setUploadStatus({
@@ -438,10 +447,18 @@ function App() {
           {/* Video Upload Section, Phone Input Section, or Results Section */}
           {processingStatus === 'completed' && resultFiles.length > 0 ? (
             <div className="upload-section">
-              <h3 className="upload-title">🎉 Your Viral Shorts Are Ready!</h3>
-              <p className="upload-description">
-                We've created {resultFiles.length} viral short{resultFiles.length > 1 ? 's' : ''} from your video.
-              </p>
+              {resultFiles.some(file => file.isProcessedVideo) && resultFiles.length === 1 ? (
+                <>
+                  <h3 className="upload-title">🎉 Your Processed Video Is Ready!</h3>
+                </>
+              ) : (
+                <>
+                  <h3 className="upload-title">🎉 Your Viral Shorts Are Ready!</h3>
+                  <p className="upload-description">
+                    We've created {resultFiles.length} viral short{resultFiles.length > 1 ? 's' : ''} from your video.
+                  </p>
+                </>
+              )}
               
               <div className="upload-container">
                 <div className="results-grid">

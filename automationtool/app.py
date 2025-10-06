@@ -298,10 +298,25 @@ def process_video_direct(filename):
                     'size': clip['size']
                 })
             
+            # Check for processed video in processed directory
+            processed_video = None
+            processed_dir = output_dir / "processed"
+            processed_video_pattern = f"{video_base_name}_with_subs_trimmed.mp4"
+            processed_video_path = processed_dir / processed_video_pattern
+            
+            if processed_video_path.exists():
+                processed_video = {
+                    'filename': processed_video_path.name,
+                    'url': f'/output/processed/{processed_video_path.name}',
+                    'size': round(processed_video_path.stat().st_size / (1024 * 1024), 2)  # Size in MB
+                }
+                logger.info(f"📹 Found processed video: {processed_video_path}")
+            
             return {
                 'status': 'SUCCESS',
                 'message': f'Video processed successfully! Generated {len(short_clips)} short clips.',
                 'short_clips': short_clips_with_urls,
+                'processed_video': processed_video,
                 'video_base_name': video_base_name,
                 'stdout': result.stdout,
                 'file': str(file_path)
@@ -1166,6 +1181,17 @@ def serve_short_video(filename):
         return send_from_directory(shorts_dir, filename)
     except Exception as e:
         logger.error(f"Error serving short video {filename}: {str(e)}")
+        return jsonify({'error': f'File not found: {filename}'}), 404
+
+@app.route('/output/processed/<path:filename>')
+def serve_processed_video(filename):
+    """Serve processed video files from processed subdirectory"""
+    try:
+        _, output_folder = get_config_paths()
+        processed_dir = Path(output_folder) / "processed"
+        return send_from_directory(processed_dir, filename)
+    except Exception as e:
+        logger.error(f"Error serving processed video {filename}: {str(e)}")
         return jsonify({'error': f'File not found: {filename}'}), 404
 
 if __name__ == '__main__':
