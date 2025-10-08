@@ -260,6 +260,47 @@ def process_video(video_file: Path, config: dict) -> bool:
     """Process a single video through the pipeline"""
     logger.info(f"Processing video: {video_file}")
     
+    # Check if orientation detection is enabled and detect video orientation
+    orientation_config = config.get('orientation_detection', {})
+    if orientation_config.get('enabled', False):
+        logger.info("🔍 Checking video orientation...")
+        
+        # Import orientation detection
+        sys.path.append(str(PROJECT_ROOT / "modules"))
+        from video_orientation import is_horizontal_video
+        
+        if is_horizontal_video(str(video_file)):
+            logger.info("📱 Horizontal video detected - using horizontal processing flow")
+            return process_horizontal_video(video_file, config)
+        else:
+            logger.info("📱 Vertical video detected - using standard processing flow")
+    
+    # Standard vertical video processing flow
+    return process_vertical_video(video_file, config)
+
+def process_horizontal_video(video_file: Path, config: dict) -> bool:
+    """Process horizontal video with specialized flow"""
+    logger.info("🎬 Processing horizontal video with specialized flow...")
+    
+    # Import horizontal processing
+    sys.path.append(str(PROJECT_ROOT / "src"))
+    from process_horizontal_video import process_horizontal_video as process_horizontal
+    
+    output_folder = str(Path(config['output_folder']).expanduser().resolve())
+    result = process_horizontal(str(video_file), output_folder)
+    
+    if result['status'] == 'success':
+        logger.info(f"✅ Horizontal video processing completed successfully!")
+        logger.info(f"📊 Generated {len(result['clips'])} clips")
+        return True
+    else:
+        logger.error(f"❌ Horizontal video processing failed: {result.get('error', 'Unknown error')}")
+        return False
+
+def process_vertical_video(video_file: Path, config: dict) -> bool:
+    """Process vertical video with standard flow"""
+    logger.info("📱 Processing vertical video with standard flow...")
+    
     # Construct the path to the subtitled video
     output_root = Path(config['output_folder']).expanduser().resolve()
     subtitled_video_path = output_root / f"{video_file.stem}_with_subs.mp4"

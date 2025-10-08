@@ -8,6 +8,14 @@
     "generate_titles": false,
     "upload_shorts": false
   },
+  "face_tracking": {
+    "enabled": false,
+    "debug_overlay": false
+  },
+  "orientation_detection": {
+    "enabled": true,
+    "horizontal_threshold": 1.0
+  },
   "schedule_config": {
     "daily_schedule": {
       "monday": "20:00",

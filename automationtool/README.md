@@ -6,6 +6,7 @@ python app.py
 
 (logs in automationaltool/pipeline.log)
 
+python crop_video.py "input_video.mp4" "output_video.mp4"
 
 #TLDR
 1. pip install -r requirements.txt
