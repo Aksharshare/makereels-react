@@ -55,14 +55,16 @@ class TranscriptionHandler:
             return None
     
     async def _transcribe_with_deepgram(self, audio_path):
-        """Transcribe an audio file using Deepgram API."""
+        """Transcribe an audio file using Deepgram API with automatic language detection."""
         try:
             with open(audio_path, 'rb') as audio:
                 source = {'buffer': audio, 'mimetype': 'audio/wav'}
+                
+                # First attempt: Auto-detect language
                 options = {
                     'punctuate': True,
                     'model': 'nova-2',
-                    'language': 'en',
+                    'detect_language': True,  # Enable automatic language detection
                     'smart_format': True,
                     'utterances': True,  # Enable utterance detection
                     'sentiment': True,   # Enable sentiment analysis
@@ -70,7 +72,112 @@ class TranscriptionHandler:
                     'timeout': 300       # 5 minutes timeout
                 }
                 
+                print("🔍 Attempting automatic language detection...")
                 response = await self.dg_client.transcription.prerecorded(source, options)
+                
+                # Debug: Print response structure for troubleshooting
+                print(f"🔍 Response keys: {list(response.keys())}")
+                if 'results' in response:
+                    print(f"🔍 Results keys: {list(response['results'].keys())}")
+                
+                # Check if Hindi was detected and retry with hi-Latn if needed
+                detected_language = ''
+                if 'results' in response:
+                    detected_language = response['results'].get('language', '')
+                    print(f"🔍 Detected language: {detected_language}")
+                    
+                    # Also check for language_confidence if available
+                    language_confidence = response['results'].get('language_confidence', 0)
+                    print(f"🔍 Language confidence: {language_confidence}")
+                
+                # Check the transcript content for Hindi characters (Devanagari script)
+                transcript_text = ''
+                if 'results' in response and 'channels' in response['results'] and 'alternatives' in response['results']['channels'][0]:
+                    transcript_text = response['results']['channels'][0]['alternatives'][0].get('transcript', '')
+                
+                # Check if transcript contains Devanagari characters (Hindi script)
+                devanagari_chars = any('\u0900' <= char <= '\u097F' for char in transcript_text)
+                
+                # Print detected language info for debugging
+                print(f"🔍 Full transcript sample: {transcript_text[:200]}...")
+                print(f"🔍 Devanagari characters found: {devanagari_chars}")
+                
+                # If Hindi is detected OR Devanagari characters are found, retry with hi-Latn
+                if (detected_language == 'hi' or 'hi' in detected_language.lower() or devanagari_chars):
+                    print("🇮🇳 Hindi detected! Retrying with hi-Latn for Latin script...")
+                    print(f"🔍 Devanagari characters found: {devanagari_chars}")
+                    print(f"🔍 Sample transcript: {transcript_text[:100]}...")
+                    
+                    # Reopen the audio file for the second attempt
+                    with open(audio_path, 'rb') as audio_retry:
+                        source_retry = {'buffer': audio_retry, 'mimetype': 'audio/wav'}
+                        
+                        options = {
+                            'punctuate': True,
+                            'model': 'nova-2',
+                            'language': 'hi-Latn',  # Force Hindi in Latin script
+                            'smart_format': True,
+                            'utterances': True,
+                            'sentiment': True,
+                            'summarize': True,
+                            'timeout': 300
+                        }
+                        
+                        response = await self.dg_client.transcription.prerecorded(source_retry, options)
+                        print("✅ Transcription completed with hi-Latn (Latin script)")
+                        
+                        # Verify the new transcript is in Latin script
+                        new_transcript = ''
+                        if 'results' in response and 'channels' in response['results'] and 'alternatives' in response['results']['channels'][0]:
+                            new_transcript = response['results']['channels'][0]['alternatives'][0].get('transcript', '')
+                        print(f"🔍 New transcript sample: {new_transcript[:100]}...")
+                
+                # If no language was detected or confidence is low, try common languages
+                elif not detected_language or language_confidence < 0.5:
+                    print("🔍 No language detected or low confidence. Trying common languages...")
+                    
+                    # Only try fallback if we got a poor transcript (less than 50 characters)
+                    if len(transcript_text.strip()) < 50:
+                        # Try common languages
+                        languages_to_try = ['en', 'es', 'fr', 'de', 'it', 'pt']
+                        
+                        for lang in languages_to_try:
+                            print(f"🔍 Trying language: {lang}")
+                            with open(audio_path, 'rb') as audio_retry:
+                                source_retry = {'buffer': audio_retry, 'mimetype': 'audio/wav'}
+                                
+                                options = {
+                                    'punctuate': True,
+                                    'model': 'nova-2',
+                                    'language': lang,
+                                    'smart_format': True,
+                                    'utterances': True,
+                                    'sentiment': True,
+                                    'summarize': True,
+                                    'timeout': 300
+                                }
+                                
+                                try:
+                                    response = await self.dg_client.transcription.prerecorded(source_retry, options)
+                                    
+                                    # Check if we got a better transcript
+                                    new_transcript = ''
+                                    if 'results' in response and 'channels' in response['results'] and 'alternatives' in response['results']['channels'][0]:
+                                        new_transcript = response['results']['channels'][0]['alternatives'][0].get('transcript', '')
+                                    
+                                    # If we got a meaningful transcript, use it
+                                    if len(new_transcript.strip()) > len(transcript_text.strip()):
+                                        print(f"✅ Better transcript found with {lang}: {new_transcript[:100]}...")
+                                        break
+                                    else:
+                                        print(f"❌ No improvement with {lang}")
+                                        
+                                except Exception as e:
+                                    print(f"❌ Error trying {lang}: {e}")
+                                    continue
+                    else:
+                        print("✅ Auto-detection produced good transcript, using it as-is")
+                
                 return response
         except Exception as e:
             print(f"Error during transcription: {str(e)}")

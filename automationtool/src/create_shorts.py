@@ -37,7 +37,7 @@ def main():
     # Sort by modification time to get the most recent file
     video_files.sort(key=lambda x: x.stat().st_mtime)
     video_path = video_files[-1]  # Now this gets the most recently modified file
-    video_name = video_path.stem.replace("_with_subs_trimmed", "")
+    video_name = video_path.stem.replace("_with_subs_trimmed", "").replace("_trimmed", "")
     
     logger.info(f"Using video: {video_path}")
     logger.info(f"Video name: {video_name}")
@@ -52,18 +52,11 @@ def main():
         srt_path = handler.transcribe_video(video_path)
         logger.info(f"Generated transcription and scoring data: {srt_path}")
 
-    # Keywords to look for in subtitles
-    keywords = [
-        "funny", "lol", "crazy", "omg", "joke", "laugh",
-        "busted", "i'm dead", "what", "insane", "wow",
-        "amazing", "unbelievable", "holy", "damn"
-    ]
-
-    # Create shorts
+    # Create shorts using language-agnostic AI scoring
     clip_paths = create_shorts_from_srt(
         video_path=video_path,
         srt_path=srt_path,
-        keywords=keywords,
+        keywords=[],  # No keywords - use pure AI scoring
         output_dir=shorts_output_dir,
         min_duration=15,
         max_duration=30,

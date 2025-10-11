@@ -73,14 +73,17 @@ def find_clips_from_srt(
         if not clip_segments:
             return 0
         
-        # Average score of all segments
-        avg_score = sum(s['score'] for s in clip_segments) / len(clip_segments)
+        # Average engagement score of all segments
+        avg_engagement = sum(s['score'] for s in clip_segments) / len(clip_segments)
         
-        # Bonus for keyword matches
-        keyword_matches = sum(1 for s in clip_segments if any(k.lower() in s['text'].lower() for k in keywords))
-        keyword_bonus = min(0.2, keyword_matches * 0.05)  # Up to 20% bonus for keywords
+        # Average confidence score (transcription quality)
+        avg_confidence = sum(s['confidence'] for s in clip_segments) / len(clip_segments)
         
-        return avg_score + keyword_bonus
+        # Hybrid scoring: 70% engagement + 30% confidence
+        # This helps educational content with high confidence but lower engagement
+        hybrid_score = (avg_engagement * 0.7) + (avg_confidence * 0.3)
+        
+        return hybrid_score
     
     def ensure_min_duration(start_time: float, end_time: float, segments: List[Dict]) -> tuple:
         """Helper function to ensure a clip meets minimum duration"""
@@ -122,8 +125,8 @@ def find_clips_from_srt(
         if current_segments and current_duration >= min_duration:
             score = calculate_clip_score(current_segments)
             
-            # Lower the threshold to create more clips
-            if score > 0.3:  # Reduced from 0.5 to 0.3
+            # Lower the threshold to create more clips (works for educational content)
+            if score > 0.25:  # Reduced from 0.3 to 0.25 for educational content
                 start_time = max(0, current_segments[0]['start'] - padding)
                 end_time = current_segments[-1]['end'] + padding
                 

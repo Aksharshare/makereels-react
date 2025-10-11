@@ -26,10 +26,12 @@ logger = logging.getLogger(__name__)
 def process_horizontal_video(input_video_path, output_folder):
     """
     Process horizontal video with the new flow:
-    1. Trim silence
-    2. Find highlights/clips
-    3. Crop each highlight to vertical
-    4. Add subtitles to each cropped highlight
+    1. Create SRT and JSON files from original video
+    2. Trim silence
+    3. Find highlights/clips
+    4. Crop each highlight to vertical
+    5. Add subtitles to each cropped highlight
+    6. Clean up and organize final videos
     
     Args:
         input_video_path (str): Path to input horizontal video
@@ -48,8 +50,22 @@ def process_horizontal_video(input_video_path, output_folder):
         return {'status': 'skipped', 'reason': 'not_horizontal'}
     
     try:
-        # Step 1: Trim silence from the horizontal video
-        logger.info("🔇 Step 1: Trimming silence from horizontal video...")
+        # Step 1: Create SRT and JSON files from original video (like vertical workflow)
+        logger.info("📝 Step 1: Creating transcription and scoring data from original video...")
+        
+        # Import transcription handler
+        sys.path.append(str(project_root / "modules"))
+        from transcription import TranscriptionHandler
+        
+        # Create transcription handler
+        handler = TranscriptionHandler()
+        
+        # Generate SRT and JSON files from original video
+        srt_path = handler.transcribe_video(input_video_path)
+        logger.info(f"✅ Transcription completed: {srt_path}")
+        
+        # Step 2: Trim silence from the horizontal video
+        logger.info("🔇 Step 2: Trimming silence from horizontal video...")
         trimmed_video_path = str(Path(output_folder) / f"{Path(input_video_path).stem}_trimmed.mp4")
         
         # Run silence trimming
@@ -68,11 +84,13 @@ def process_horizontal_video(input_video_path, output_folder):
             logger.error(f"Looked in: {processed_dir}")
             return {'status': 'error', 'error': 'trimmed_video_not_found'}
         
-        trimmed_video_path = str(trimmed_files[0])
+        # Sort by modification time to get the most recent file
+        trimmed_files.sort(key=lambda x: x.stat().st_mtime)
+        trimmed_video_path = str(trimmed_files[-1])  # Get most recent file
         logger.info(f"✅ Silence trimmed: {trimmed_video_path}")
         
-        # Step 2: Find highlights/clips from the trimmed video
-        logger.info("🎯 Step 2: Finding highlights/clips...")
+        # Step 3: Find highlights/clips from the trimmed video
+        logger.info("🎯 Step 3: Finding highlights/clips...")
         
         # Run create_shorts.py to find highlights
         shorts_command = 'python src/create_shorts.py'
@@ -84,16 +102,21 @@ def process_horizontal_video(input_video_path, output_folder):
         
         # Find generated short clips (create_shorts.py saves them in shorts subfolder)
         shorts_dir = Path(output_folder) / "shorts"
-        short_clips = list(shorts_dir.glob("*_short_*.mp4"))
+        
+        # Only look for clips from the current video, not all existing clips
+        current_video_name = Path(input_video_path).stem
+        short_clips = list(shorts_dir.glob(f"{current_video_name}_short_*.mp4"))
+        
         if not short_clips:
             logger.error("❌ No short clips found after highlight detection")
             logger.error(f"Looked in: {shorts_dir}")
+            logger.error(f"Expected pattern: {current_video_name}_short_*.mp4")
             return {'status': 'error', 'error': 'no_clips_found'}
         
-        logger.info(f"✅ Found {len(short_clips)} highlight clips")
+        logger.info(f"✅ Found {len(short_clips)} highlight clips for {current_video_name}")
         
-        # Step 3: Crop each highlight to vertical format with face tracking
-        logger.info("✂️ Step 3: Cropping highlights to vertical format...")
+        # Step 4: Crop each highlight to vertical format with face tracking
+        logger.info("✂️ Step 4: Cropping highlights to vertical format...")
         
         cropped_clips = []
         for i, clip_path in enumerate(short_clips):
@@ -119,8 +142,8 @@ def process_horizontal_video(input_video_path, output_folder):
             cropped_clips.append(final_cropped_path)
             logger.info(f"✅ Cropped clip {i+1}: {final_cropped_path}")
         
-        # Step 4: Add subtitles to each cropped clip
-        logger.info("📝 Step 4: Adding subtitles to cropped clips...")
+        # Step 5: Add subtitles to each cropped clip
+        logger.info("📝 Step 5: Adding subtitles to cropped clips...")
         
         subtitled_clips = []
         for i, clip_path in enumerate(cropped_clips):
@@ -144,8 +167,8 @@ def process_horizontal_video(input_video_path, output_folder):
                     subtitled_clips.append(clip_path)  # Use original if subtitle file not found
                     logger.warning(f"⚠️ Subtitle file not found for clip {i+1}, using original")
         
-        # Step 5: Clean up and organize final videos
-        logger.info("🧹 Step 5: Cleaning up and organizing final videos...")
+        # Step 6: Clean up and organize final videos
+        logger.info("🧹 Step 6: Cleaning up and organizing final videos...")
         
         # Create shorts directory if it doesn't exist
         shorts_dir = Path(output_folder) / "shorts"
@@ -173,11 +196,22 @@ def process_horizontal_video(input_video_path, output_folder):
                 os.remove(clip_path)
                 logger.info(f"🗑️ Removed: {Path(clip_path).name}")
         
-        # Clean up original shorts from shorts folder
+        # Clean up original shorts from output folder (not shorts folder)
         for clip_path in short_clips:
-            if os.path.exists(clip_path):
+            # Only remove if it's still in the output folder, not in shorts folder
+            if os.path.exists(clip_path) and "shorts" not in str(clip_path):
                 os.remove(clip_path)
                 logger.info(f"🗑️ Removed: {Path(clip_path).name}")
+        
+        # Clean up any remaining intermediate files in shorts folder
+        # Remove files with double underscore pattern (intermediate files)
+        for file_path in shorts_dir.glob("*_short__*.mp4"):
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                logger.info(f"🗑️ Removed intermediate from shorts: {file_path.name}")
+        
+        # Only clean up intermediate files with double underscore pattern
+        # Don't remove files from other videos - they should be preserved
         
         # Clean up any other intermediate files in output folder
         output_path = Path(output_folder)

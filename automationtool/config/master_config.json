@@ -1,12 +1,35 @@
 {
-  "input_folder": "app/input",
-  "output_folder": "app/output",
+  "input_folder": "app\input",
+  "output_folder": "app\output",
   "pipeline_steps": {
     "add_subtitles": true,
     "trim_silence": true,
     "create_shorts": true,
     "generate_titles": false,
     "upload_shorts": false
+  },
+  "language_settings": {
+    "auto_detect_language": true,
+    "primary_language": "auto",
+    "supported_languages": [
+      "hi-Latn",
+      "en",
+      "es",
+      "fr",
+      "de",
+      "ta",
+      "ar",
+      "zh",
+      "ja",
+      "ko",
+      "pt",
+      "it",
+      "ru",
+      "nl"
+    ],
+    "transcription_language": "auto",
+    "hindi_fallback": "hi-Latn",
+    "title_generation_language": "hi_en"
   },
   "face_tracking": {
     "enabled": false,

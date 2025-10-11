@@ -339,10 +339,10 @@ function App() {
       }
     }, 2000); // Poll every 2 seconds
     
-    // Clear interval after 10 minutes to prevent infinite polling
+    // Clear interval after 30 minutes to prevent infinite polling
     setTimeout(() => {
       clearInterval(pollInterval);
-    }, 600000);
+    }, 1800000);
   };
 
   const downloadFile = async (downloadUrl, filename) => {
